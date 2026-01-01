@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 maximum-scale=1.0,
+                 user-scalable=no">
+
   <title>College AR Navigation</title>
 
   <!-- A-Frame -->
@@ -15,7 +20,7 @@
       margin: 0;
       overflow: hidden;
       background: black;
-      font-family: Arial, sans-serif;
+      touch-action: none;
     }
 
     #startAR {
@@ -39,6 +44,7 @@
       text-align: center;
       color: white;
       z-index: 9999;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -58,11 +64,11 @@
   renderer="antialias:true; precision: mediump;"
   arjs="
     sourceType: webcam;
-    sourceWidth: 1280;
-    sourceHeight: 720;
-    displayWidth: 1280;
-    displayHeight: 720;
+    facingMode: environment;
+    videoTexture: true;
     debugUIEnabled: false;
+    cameraParametersUrl:
+      https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/camera_para.dat;
   "
 >
 
@@ -80,25 +86,12 @@
       loop: true;
       easing: easeInOutSine"
   >
-    <a-cylinder
-      position="0 0.35 0"
-      radius="0.05"
-      height="0.5"
-      color="#00ff00">
-    </a-cylinder>
-
-    <a-cone
-      position="0 0.7 0"
-      radius-bottom="0.15"
-      radius-top="0"
-      height="0.25"
-      color="#00ff00">
-    </a-cone>
+    <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="#00ff00"></a-cylinder>
+    <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="#00ff00"></a-cone>
   </a-entity>
 
   <!-- MARKERS -->
   <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
-
   <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
   <a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
   <a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
@@ -116,7 +109,6 @@
   <a-entity camera></a-entity>
 </a-scene>
 
-<!-- Navigation Logic -->
 <script type="module">
   import {
     loadMap,
@@ -125,13 +117,13 @@
     onNodeReached
   } from "./js/navigation.js";
 
-  const DESTINATION = "B2"; // Change destination here
+  const DESTINATION = "B2";
 
-  document.getElementById("startAR").addEventListener("click", async () => {
+  document.getElementById("startAR").onclick = async () => {
     document.getElementById("scene").style.display = "block";
     document.getElementById("startAR").style.display = "none";
     await loadMap();
-  });
+  };
 
   function rotateArrow(action) {
     const arrow = document.getElementById("navArrow");
@@ -153,21 +145,16 @@
     init() {
       this.el.addEventListener("markerFound", () => {
         const node = this.data.node;
-        document.getElementById("status").innerText =
-          `You are at ${node}`;
+        document.getElementById("status").innerText = `You are at ${node}`;
 
         setStartNode(node);
-
-        const step =
-          onNodeReached(node) || navigateTo(DESTINATION);
+        const step = onNodeReached(node) || navigateTo(DESTINATION);
 
         if (step) {
           rotateArrow(step.action);
-          document.getElementById("status").innerText =
-            `Go ${step.action}`;
+          document.getElementById("status").innerText = `Go ${step.action}`;
         } else {
-          document.getElementById("status").innerText =
-            "Destination reached 🎯";
+          document.getElementById("status").innerText = "Destination reached 🎯";
         }
       });
     }
