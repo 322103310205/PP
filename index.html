@@ -1,22 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>College AR Navigation</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+  <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
-  <script type="module" src="js/navigation.js"></script>
-
   <style>
-    body { margin: 0; overflow: hidden; background: black; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: Arial, sans-serif;
+    }
+
     #startAR {
       position: fixed;
-      top: 50%; left: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
       padding: 14px 22px;
       font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #007bff;
+      color: white;
+      z-index: 9999;
+    }
+
+    #status {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      color: white;
       z-index: 9999;
     }
   </style>
@@ -25,96 +46,133 @@
 <body>
 
 <button id="startAR">Start AR</button>
+<div id="status">Scan a QR marker</div>
 
 <a-scene
   id="scene"
   embedded
   style="display:none"
-  arjs="sourceType:webcam; debugUIEnabled:false;"
+  vr-mode-ui="enabled:false"
+  xr-mode-ui="enabled:false"
+  device-orientation-permission-ui="enabled:false"
+  renderer="antialias:true; precision: mediump;"
+  arjs="
+    sourceType: webcam;
+    sourceWidth: 1280;
+    sourceHeight: 720;
+    displayWidth: 1280;
+    displayHeight: 720;
+    debugUIEnabled: false;
+  "
 >
 
-  <!-- Arrow -->
-  <a-entity id="navArrow" visible="false"
+  <!-- Navigation Arrow -->
+  <a-entity
+    id="navArrow"
+    position="0 0.3 0"
+    visible="false"
     animation__float="
       property: position;
-      from: 0 0 0;
-      to: 0 0.05 0;
+      from: 0 0.3 0;
+      to: 0 0.35 0;
       dur: 800;
-      loop: true">
-    <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="lime"></a-cylinder>
-    <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="lime"></a-cone>
+      dir: alternate;
+      loop: true;
+      easing: easeInOutSine"
+  >
+    <a-cylinder
+      position="0 0.35 0"
+      radius="0.05"
+      height="0.5"
+      color="#00ff00">
+    </a-cylinder>
+
+    <a-cone
+      position="0 0.7 0"
+      radius-bottom="0.15"
+      radius-top="0"
+      height="0.25"
+      color="#00ff00">
+    </a-cone>
   </a-entity>
 
   <!-- MARKERS -->
-  <!-- GATE -->
-<a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
+  <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
 
-<!-- LEFT SIDE BLOCKS -->
-<a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
-<a-marker type="pattern" url="markers/B4.patt" markerhandler="node:B4"></a-marker>
-<a-marker type="pattern" url="markers/B5.patt" markerhandler="node:B5"></a-marker>
-<a-marker type="pattern" url="markers/B6.patt" markerhandler="node:B6"></a-marker>
-<a-marker type="pattern" url="markers/B7.patt" markerhandler="node:B7"></a-marker>
-<a-marker type="pattern" url="markers/B8.patt" markerhandler="node:B8"></a-marker>
-
-<!-- RIGHT SIDE BLOCKS -->
-<a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
-<a-marker type="pattern" url="markers/B9.patt" markerhandler="node:B9"></a-marker>
-<a-marker type="pattern" url="markers/B10.patt" markerhandler="node:B10"></a-marker>
-<a-marker type="pattern" url="markers/B11.patt" markerhandler="node:B11"></a-marker>
-<a-marker type="pattern" url="markers/B12.patt" markerhandler="node:B12"></a-marker>
-<a-marker type="pattern" url="markers/B13.patt" markerhandler="node:B13"></a-marker>
-
-<!-- ADMIN BLOCK -->
-<a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
-
+  <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
+  <a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
+  <a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
+  <a-marker type="pattern" url="markers/B4.patt" markerhandler="node:B4"></a-marker>
+  <a-marker type="pattern" url="markers/B5.patt" markerhandler="node:B5"></a-marker>
+  <a-marker type="pattern" url="markers/B6.patt" markerhandler="node:B6"></a-marker>
+  <a-marker type="pattern" url="markers/B7.patt" markerhandler="node:B7"></a-marker>
+  <a-marker type="pattern" url="markers/B8.patt" markerhandler="node:B8"></a-marker>
+  <a-marker type="pattern" url="markers/B9.patt" markerhandler="node:B9"></a-marker>
+  <a-marker type="pattern" url="markers/B10.patt" markerhandler="node:B10"></a-marker>
+  <a-marker type="pattern" url="markers/B11.patt" markerhandler="node:B11"></a-marker>
+  <a-marker type="pattern" url="markers/B12.patt" markerhandler="node:B12"></a-marker>
+  <a-marker type="pattern" url="markers/B13.patt" markerhandler="node:B13"></a-marker>
 
   <a-entity camera></a-entity>
 </a-scene>
 
+<!-- Navigation Logic -->
 <script type="module">
-import { loadMap, setStartNode, navigateTo, onNodeReached } from "./js/navigation.js";
+  import {
+    loadMap,
+    setStartNode,
+    navigateTo,
+    onNodeReached
+  } from "./js/navigation.js";
 
-const DESTINATION = "B2";
+  const DESTINATION = "B2"; // Change destination here
 
-document.getElementById("startAR").onclick = async () => {
-  document.getElementById("scene").style.display = "block";
-  document.getElementById("startAR").style.display = "none";
-  await loadMap();
-};
+  document.getElementById("startAR").addEventListener("click", async () => {
+    document.getElementById("scene").style.display = "block";
+    document.getElementById("startAR").style.display = "none";
+    await loadMap();
+  });
 
-function rotateArrow(action) {
-  const arrow = document.getElementById("navArrow");
-  arrow.setAttribute("visible", true);
+  function rotateArrow(action) {
+    const arrow = document.getElementById("navArrow");
+    arrow.setAttribute("visible", true);
 
-  const angles = {
-    FORWARD: 0,
-    LEFT: -90,
-    RIGHT: 90,
-    BACK: 180
-  };
+    const angles = {
+      FORWARD: 0,
+      LEFT: -90,
+      RIGHT: 90,
+      BACK: 180
+    };
 
-  arrow.setAttribute(
-    "rotation",
-    `0 ${angles[action]} 0`
-  );
-}
-
-AFRAME.registerComponent("markerhandler", {
-  schema: { node: { type: "string" } },
-
-  init() {
-    this.el.addEventListener("markerFound", () => {
-      const node = this.data.node;
-      setStartNode(node);
-
-      const step = onNodeReached(node) || navigateTo(DESTINATION);
-      if (step) rotateArrow(step.action);
-    });
+    arrow.setAttribute("rotation", `0 ${angles[action]} 0`);
   }
-});
+
+  AFRAME.registerComponent("markerhandler", {
+    schema: { node: { type: "string" } },
+
+    init() {
+      this.el.addEventListener("markerFound", () => {
+        const node = this.data.node;
+        document.getElementById("status").innerText =
+          `You are at ${node}`;
+
+        setStartNode(node);
+
+        const step =
+          onNodeReached(node) || navigateTo(DESTINATION);
+
+        if (step) {
+          rotateArrow(step.action);
+          document.getElementById("status").innerText =
+            `Go ${step.action}`;
+        } else {
+          document.getElementById("status").innerText =
+            "Destination reached 🎯";
+        }
+      });
+    }
+  });
 </script>
 
 </body>
 </html>
-
