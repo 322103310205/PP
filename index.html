@@ -171,6 +171,7 @@ AFRAME.registerComponent("markerhandler", {
 
   init() {
     this.el.addEventListener("markerFound", () => {
+      alert("Marker detected: " + this.data.node);
       const node = this.data.node;
       const arrow = document.getElementById("navArrow");
 
@@ -201,3 +202,4 @@ AFRAME.registerComponent("markerhandler", {
 
 </body>
 </html>
+
