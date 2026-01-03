@@ -19,41 +19,71 @@
     body {
       margin: 0;
       overflow: hidden;
-      background: black;
-      touch-action: none;
+      background: #000;
       font-family: Arial, sans-serif;
     }
 
-    #startAR {
+    /* ---------- START SCREEN ---------- */
+    #startScreen {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 14px 22px;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
-      background: #007bff;
+      inset: 0;
+      background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       color: white;
       z-index: 9999;
+      text-align: center;
+      padding: 20px;
     }
 
+    #startScreen h1 {
+      margin-bottom: 10px;
+      font-size: 26px;
+    }
+
+    #startScreen p {
+      font-size: 15px;
+      opacity: 0.9;
+      margin-bottom: 25px;
+    }
+
+    #startAR {
+      padding: 14px 26px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: #00c853;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* ---------- STATUS BAR ---------- */
     #status {
       position: fixed;
-      bottom: 20px;
+      bottom: 15px;
       width: 100%;
       text-align: center;
       color: white;
-      z-index: 9999;
       font-size: 16px;
+      z-index: 9999;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 0;
     }
   </style>
 </head>
 
 <body>
 
-<button id="startAR">Start AR</button>
-<div id="status">Scan a QR marker</div>
+<!-- START / PERMISSION SCREEN -->
+<div id="startScreen">
+  <h1>Campus AR Navigation</h1>
+  <p>Point your camera at campus QR markers<br>to get live directions</p>
+  <button id="startAR">Allow Camera & Start</button>
+</div>
+
+<div id="status">Waiting for camera…</div>
 
 <a-scene
   id="scene"
@@ -68,11 +98,11 @@
   "
 >
 
-  <!-- ONE REUSABLE NAVIGATION ARROW -->
+  <!-- ONE REUSABLE ARROW -->
   <a-entity
     id="navArrow"
-    position="0 0.3 0"
     visible="false"
+    position="0 0.3 0"
     animation__float="
       property: position;
       from: 0 0.3 0;
@@ -82,24 +112,12 @@
       loop: true;
       easing: easeInOutSine"
   >
-    <a-cylinder
-      position="0 0.35 0"
-      radius="0.05"
-      height="0.5"
-      color="#00ff00">
-    </a-cylinder>
-
-    <a-cone
-      position="0 0.7 0"
-      radius-bottom="0.15"
-      height="0.25"
-      color="#00ff00">
-    </a-cone>
+    <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="#00ff00"></a-cylinder>
+    <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="#00ff00"></a-cone>
   </a-entity>
 
-  <!-- QR / PATTERN MARKERS -->
+  <!-- QR MARKERS -->
   <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
-
   <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
   <a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
   <a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
@@ -117,27 +135,22 @@
   <a-entity camera></a-entity>
 </a-scene>
 
-<!-- LOAD NAVIGATION LOGIC (CASE-CORRECT) -->
+<!-- LOAD NAVIGATION LOGIC -->
 <script src="Js/navigation.js"></script>
 
 <script>
-/* =========================
-   CONFIG
-========================= */
-const DESTINATION = "B2";
+/* ================= CONFIG ================= */
+const DESTINATION = "B2"; // Change destination here
 
-/* =========================
-   START AR
-========================= */
+/* ================= START AR ================= */
 document.getElementById("startAR").addEventListener("click", async () => {
+  document.getElementById("startScreen").style.display = "none";
   document.getElementById("scene").style.display = "block";
-  document.getElementById("startAR").style.display = "none";
+  document.getElementById("status").innerText = "Scan a QR marker";
   await loadMap();
 });
 
-/* =========================
-   ROTATE ARROW
-========================= */
+/* ================= ROTATE ARROW ================= */
 function rotateArrow(action) {
   const arrow = document.getElementById("navArrow");
   arrow.setAttribute("visible", true);
@@ -152,9 +165,7 @@ function rotateArrow(action) {
   arrow.setAttribute("rotation", `0 ${angles[action]} 0`);
 }
 
-/* =========================
-   MARKER HANDLER
-========================= */
+/* ================= MARKER HANDLER ================= */
 AFRAME.registerComponent("markerhandler", {
   schema: { node: { type: "string" } },
 
@@ -163,16 +174,12 @@ AFRAME.registerComponent("markerhandler", {
       const node = this.data.node;
       const arrow = document.getElementById("navArrow");
 
-      /* Attach arrow to detected marker */
+      // Attach arrow to marker
       this.el.appendChild(arrow);
-      arrow.setAttribute("position", "0 0.3 0");
       arrow.setAttribute("visible", true);
-
-      document.getElementById("status").innerText =
-        `You are at ${node}`;
+      arrow.setAttribute("position", "0 0.3 0");
 
       setStartNode(node);
-
       const step = onNodeReached(node) || navigateTo(DESTINATION);
 
       if (step) {
@@ -186,8 +193,7 @@ AFRAME.registerComponent("markerhandler", {
     });
 
     this.el.addEventListener("markerLost", () => {
-      document.getElementById("navArrow")
-        .setAttribute("visible", false);
+      document.getElementById("navArrow").setAttribute("visible", false);
     });
   }
 });
