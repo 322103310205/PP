@@ -1,118 +1,115 @@
+/* ==============================
+   GLOBAL STATE
+============================== */
+
 let mapData = null;
 let graph = {};
 
 let startNode = null;
-let activeSteps = [];
+let pathSteps = [];
 let currentStepIndex = 0;
-let currentTargetNode = null;
 
-/* ---------- LOAD MAP ---------- */
-export async function loadMap() {
+/* ==============================
+   LOAD MAP
+============================== */
+
+async function loadMap() {
   const res = await fetch("map.json");
   mapData = await res.json();
 
-  mapData.nodes.forEach(n => {
-    graph[n.id] = {
-      x: n.position.x,
-      y: n.position.y,
-      neighbors: n.connections
+  graph = {};
+  mapData.nodes.forEach(node => {
+    graph[node.id] = {
+      x: node.position.x,
+      y: node.position.y,
+      neighbors: node.connections
     };
   });
 
-  console.log("Map loaded");
+  console.log("Map loaded:", graph);
 }
 
-/* ---------- PATHFINDING (A*) ---------- */
-function heuristic(a, b) {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
+/* ==============================
+   PATHFINDING (BFS – simple & reliable)
+============================== */
 
-function aStar(start, goal) {
-  const open = new Set([start]);
-  const cameFrom = {};
-  const g = {}, f = {};
+function findPath(start, end) {
+  const queue = [[start]];
+  const visited = new Set([start]);
 
-  Object.keys(graph).forEach(k => {
-    g[k] = Infinity;
-    f[k] = Infinity;
-  });
+  while (queue.length > 0) {
+    const path = queue.shift();
+    const node = path[path.length - 1];
 
-  g[start] = 0;
-  f[start] = heuristic(graph[start], graph[goal]);
+    if (node === end) return path;
 
-  while (open.size) {
-    const current = [...open].reduce((a, b) =>
-      f[a] < f[b] ? a : b
-    );
-
-    if (current === goal) return reconstruct(cameFrom, current);
-
-    open.delete(current);
-
-    for (const n of graph[current].neighbors) {
-      const temp = g[current] + heuristic(graph[current], graph[n]);
-      if (temp < g[n]) {
-        cameFrom[n] = current;
-        g[n] = temp;
-        f[n] = temp + heuristic(graph[n], graph[goal]);
-        open.add(n);
+    for (const n of graph[node].neighbors) {
+      if (!visited.has(n)) {
+        visited.add(n);
+        queue.push([...path, n]);
       }
     }
   }
   return null;
 }
 
-function reconstruct(cameFrom, cur) {
-  const path = [cur];
-  while (cameFrom[cur]) {
-    cur = cameFrom[cur];
-    path.unshift(cur);
-  }
-  return path;
-}
+/* ==============================
+   DIRECTION CALCULATION
+============================== */
 
-/* ---------- DIRECTION ---------- */
-function direction(from, to) {
+function getDirection(from, to) {
   const dx = graph[to].x - graph[from].x;
   const dy = graph[to].y - graph[from].y;
 
-  if (Math.abs(dx) > Math.abs(dy))
+  if (Math.abs(dx) > Math.abs(dy)) {
     return dx > 0 ? "RIGHT" : "LEFT";
-  return dy > 0 ? "BACK" : "FORWARD";
+  } else {
+    return dy > 0 ? "BACK" : "FORWARD";
+  }
 }
 
-/* ---------- NAVIGATION API ---------- */
-export function setStartNode(node) {
-  startNode = node;
+/* ==============================
+   NAVIGATION API (USED BY index.html)
+============================== */
+
+function setStartNode(nodeId) {
+  startNode = nodeId;
+  console.log("Start node set:", nodeId);
 }
 
-export function navigateTo(dest) {
-  const path = aStar(startNode, dest);
+function navigateTo(destination) {
+  if (!startNode || !graph[destination]) return null;
+
+  const path = findPath(startNode, destination);
   if (!path || path.length < 2) return null;
 
-  activeSteps = [];
+  pathSteps = [];
   for (let i = 1; i < path.length; i++) {
-    activeSteps.push({
+    pathSteps.push({
       from: path[i - 1],
       to: path[i],
-      action: direction(path[i - 1], path[i])
+      action: getDirection(path[i - 1], path[i])
     });
   }
 
   currentStepIndex = 0;
-  currentTargetNode = activeSteps[0].to;
-  return activeSteps[0];
+  console.log("Path:", pathSteps);
+  return pathSteps[0];
 }
 
-export function onNodeReached(node) {
-  if (node !== currentTargetNode) return null;
+function onNodeReached(nodeId) {
+  if (!pathSteps.length) return null;
+
+  if (pathSteps[currentStepIndex].to !== nodeId) {
+    return null;
+  }
 
   currentStepIndex++;
-  if (currentStepIndex >= activeSteps.length) {
+
+  if (currentStepIndex >= pathSteps.length) {
     console.log("Destination reached");
     return null;
   }
 
-  currentTargetNode = activeSteps[currentStepIndex].to;
-  return activeSteps[currentStepIndex];
+  return pathSteps[currentStepIndex];
 }
