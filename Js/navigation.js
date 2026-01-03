@@ -1,91 +1,110 @@
-/* ==============================
-   GLOBAL STATE
-============================== */
-
 let mapData = null;
 let graph = {};
 
 let startNode = null;
-let pathSteps = [];
+let activeSteps = [];
 let currentStepIndex = 0;
+let currentTargetNode = null;
 
-/* ==============================
-   LOAD MAP
-============================== */
-
-async function loadMap() {
+/* ---------- LOAD MAP ---------- */
+export async function loadMap() {
   const res = await fetch("map.json");
   mapData = await res.json();
 
-  graph = {};
-  mapData.nodes.forEach(node => {
-    graph[node.id] = {
-      x: node.position.x,
-      y: node.position.y,
-      neighbors: node.connections
+  mapData.nodes.forEach(n => {
+    graph[n.id] = {
+      x: n.position.x,
+      y: n.position.y,
+      neighbors: n.connections
     };
   });
 
-  console.log("Map loaded:", graph);
+  console.log("Map loaded with nodes:", graph);
 }
 
-/* ==============================
-   PATHFINDING (BFS – simple & reliable)
-============================== */
+/* ---------- A* HEURISTIC ---------- */
+function heuristic(a, b) {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
 
-function findPath(start, end) {
-  const queue = [[start]];
-  const visited = new Set([start]);
+/* ---------- A* PATHFINDING ---------- */
+function aStar(start, goal) {
+  const openSet = new Set([start]);
+  const cameFrom = {};
 
-  while (queue.length > 0) {
-    const path = queue.shift();
-    const node = path[path.length - 1];
+  const gScore = {};
+  const fScore = {};
 
-    if (node === end) return path;
+  Object.keys(graph).forEach(n => {
+    gScore[n] = Infinity;
+    fScore[n] = Infinity;
+  });
 
-    for (const n of graph[node].neighbors) {
-      if (!visited.has(n)) {
-        visited.add(n);
-        queue.push([...path, n]);
+  gScore[start] = 0;
+  fScore[start] = heuristic(graph[start], graph[goal]);
+
+  while (openSet.size > 0) {
+    const current = [...openSet].reduce((a, b) =>
+      fScore[a] < fScore[b] ? a : b
+    );
+
+    if (current === goal) {
+      return reconstructPath(cameFrom, current);
+    }
+
+    openSet.delete(current);
+
+    for (const neighbor of graph[current].neighbors) {
+      const tentativeG =
+        gScore[current] +
+        heuristic(graph[current], graph[neighbor]);
+
+      if (tentativeG < gScore[neighbor]) {
+        cameFrom[neighbor] = current;
+        gScore[neighbor] = tentativeG;
+        fScore[neighbor] =
+          tentativeG + heuristic(graph[neighbor], graph[goal]);
+        openSet.add(neighbor);
       }
     }
   }
   return null;
 }
 
-/* ==============================
-   DIRECTION CALCULATION
-============================== */
+/* ---------- PATH RECONSTRUCTION ---------- */
+function reconstructPath(cameFrom, current) {
+  const path = [current];
+  while (cameFrom[current]) {
+    current = cameFrom[current];
+    path.unshift(current);
+  }
+  return path;
+}
 
+/* ---------- DIRECTION ---------- */
 function getDirection(from, to) {
   const dx = graph[to].x - graph[from].x;
   const dy = graph[to].y - graph[from].y;
 
-  if (Math.abs(dx) > Math.abs(dy)) {
+  if (Math.abs(dx) > Math.abs(dy))
     return dx > 0 ? "RIGHT" : "LEFT";
-  } else {
-    return dy > 0 ? "BACK" : "FORWARD";
-  }
+  return dy > 0 ? "BACK" : "FORWARD";
 }
 
-/* ==============================
-   NAVIGATION API (USED BY index.html)
-============================== */
-
-function setStartNode(nodeId) {
-  startNode = nodeId;
-  console.log("Start node set:", nodeId);
+/* ---------- NAVIGATION API ---------- */
+export function setStartNode(node) {
+  startNode = node;
 }
 
-function navigateTo(destination) {
-  if (!startNode || !graph[destination]) return null;
+export function navigateTo(dest) {
+  if (!startNode || !graph[dest]) return null;
 
-  const path = findPath(startNode, destination);
+  const path = aStar(startNode, dest);
   if (!path || path.length < 2) return null;
 
-  pathSteps = [];
+  activeSteps = [];
   for (let i = 1; i < path.length; i++) {
-    pathSteps.push({
+    activeSteps.push({
       from: path[i - 1],
       to: path[i],
       action: getDirection(path[i - 1], path[i])
@@ -93,23 +112,19 @@ function navigateTo(destination) {
   }
 
   currentStepIndex = 0;
-  console.log("Path:", pathSteps);
-  return pathSteps[0];
+  currentTargetNode = activeSteps[0].to;
+  return activeSteps[0];
 }
 
-function onNodeReached(nodeId) {
-  if (!pathSteps.length) return null;
-
-  if (pathSteps[currentStepIndex].to !== nodeId) {
-    return null;
-  }
+export function onNodeReached(node) {
+  if (node !== currentTargetNode) return null;
 
   currentStepIndex++;
-
-  if (currentStepIndex >= pathSteps.length) {
+  if (currentStepIndex >= activeSteps.length) {
     console.log("Destination reached");
     return null;
   }
 
-  return pathSteps[currentStepIndex];
+  currentTargetNode = activeSteps[currentStepIndex].to;
+  return activeSteps[currentStepIndex];
 }
