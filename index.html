@@ -117,10 +117,20 @@
   </a-entity>
 
   <!-- QR MARKERS -->
-  <a-marker type="pattern" url="markers/B5.patt">
-  <a-box position="0 0.5 0" color="red"></a-box>
-  </a-marker>
-
+  <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
+  <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
+  <a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
+  <a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
+  <a-marker type="pattern" url="markers/B4.patt" markerhandler="node:B4"></a-marker>
+  <a-marker type="pattern" url="markers/B5.patt" markerhandler="node:B5"></a-marker>
+  <a-marker type="pattern" url="markers/B6.patt" markerhandler="node:B6"></a-marker>
+  <a-marker type="pattern" url="markers/B7.patt" markerhandler="node:B7"></a-marker>
+  <a-marker type="pattern" url="markers/B8.patt" markerhandler="node:B8"></a-marker>
+  <a-marker type="pattern" url="markers/B9.patt" markerhandler="node:B9"></a-marker>
+  <a-marker type="pattern" url="markers/B10.patt" markerhandler="node:B10"></a-marker>
+  <a-marker type="pattern" url="markers/B11.patt" markerhandler="node:B11"></a-marker>
+  <a-marker type="pattern" url="markers/B12.patt" markerhandler="node:B12"></a-marker>
+  <a-marker type="pattern" url="markers/B13.patt" markerhandler="node:B13"></a-marker>
 
   <a-entity camera></a-entity>
 </a-scene>
@@ -161,7 +171,6 @@ AFRAME.registerComponent("markerhandler", {
 
   init() {
     this.el.addEventListener("markerFound", () => {
-      alert("Marker detected: " + this.data.node);
       const node = this.data.node;
       const arrow = document.getElementById("navArrow");
 
@@ -192,5 +201,3 @@ AFRAME.registerComponent("markerhandler", {
 
 </body>
 </html>
-
-
