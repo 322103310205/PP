@@ -21,6 +21,7 @@
       overflow: hidden;
       background: black;
       touch-action: none;
+      font-family: Arial, sans-serif;
     }
 
     #startAR {
@@ -59,20 +60,15 @@
   embedded
   style="display:none"
   vr-mode-ui="enabled:false"
-  xr-mode-ui="enabled:false"
-  device-orientation-permission-ui="enabled:false"
   renderer="antialias:true; precision: mediump;"
   arjs="
     sourceType: webcam;
     facingMode: environment;
-    videoTexture: true;
     debugUIEnabled: false;
-    cameraParametersUrl:
-      https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/camera_para.dat;
   "
 >
 
-  <!-- Navigation Arrow -->
+  <!-- ONE REUSABLE NAVIGATION ARROW -->
   <a-entity
     id="navArrow"
     position="0 0.3 0"
@@ -86,12 +82,24 @@
       loop: true;
       easing: easeInOutSine"
   >
-    <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="#00ff00"></a-cylinder>
-    <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="#00ff00"></a-cone>
+    <a-cylinder
+      position="0 0.35 0"
+      radius="0.05"
+      height="0.5"
+      color="#00ff00">
+    </a-cylinder>
+
+    <a-cone
+      position="0 0.7 0"
+      radius-bottom="0.15"
+      height="0.25"
+      color="#00ff00">
+    </a-cone>
   </a-entity>
 
-  <!-- MARKERS -->
+  <!-- QR / PATTERN MARKERS -->
   <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
+
   <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
   <a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
   <a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
@@ -109,58 +117,81 @@
   <a-entity camera></a-entity>
 </a-scene>
 
-<script type="module">
-  import {
-    loadMap,
-    setStartNode,
-    navigateTo,
-    onNodeReached
-  } from "./Js/navigation.js";
+<!-- LOAD NAVIGATION LOGIC (CASE-CORRECT) -->
+<script src="Js/navigation.js"></script>
 
-  const DESTINATION = "B2";
+<script>
+/* =========================
+   CONFIG
+========================= */
+const DESTINATION = "B2";
 
-  document.getElementById("startAR").onclick = async () => {
-    document.getElementById("scene").style.display = "block";
-    document.getElementById("startAR").style.display = "none";
-    await loadMap();
+/* =========================
+   START AR
+========================= */
+document.getElementById("startAR").addEventListener("click", async () => {
+  document.getElementById("scene").style.display = "block";
+  document.getElementById("startAR").style.display = "none";
+  await loadMap();
+});
+
+/* =========================
+   ROTATE ARROW
+========================= */
+function rotateArrow(action) {
+  const arrow = document.getElementById("navArrow");
+  arrow.setAttribute("visible", true);
+
+  const angles = {
+    FORWARD: 0,
+    LEFT: -90,
+    RIGHT: 90,
+    BACK: 180
   };
 
-  function rotateArrow(action) {
-    const arrow = document.getElementById("navArrow");
-    arrow.setAttribute("visible", true);
+  arrow.setAttribute("rotation", `0 ${angles[action]} 0`);
+}
 
-    const angles = {
-      FORWARD: 0,
-      LEFT: -90,
-      RIGHT: 90,
-      BACK: 180
-    };
+/* =========================
+   MARKER HANDLER
+========================= */
+AFRAME.registerComponent("markerhandler", {
+  schema: { node: { type: "string" } },
 
-    arrow.setAttribute("rotation", `0 ${angles[action]} 0`);
+  init() {
+    this.el.addEventListener("markerFound", () => {
+      const node = this.data.node;
+      const arrow = document.getElementById("navArrow");
+
+      /* Attach arrow to detected marker */
+      this.el.appendChild(arrow);
+      arrow.setAttribute("position", "0 0.3 0");
+      arrow.setAttribute("visible", true);
+
+      document.getElementById("status").innerText =
+        `You are at ${node}`;
+
+      setStartNode(node);
+
+      const step = onNodeReached(node) || navigateTo(DESTINATION);
+
+      if (step) {
+        rotateArrow(step.action);
+        document.getElementById("status").innerText =
+          `Go ${step.action}`;
+      } else {
+        document.getElementById("status").innerText =
+          "Destination reached 🎯";
+      }
+    });
+
+    this.el.addEventListener("markerLost", () => {
+      document.getElementById("navArrow")
+        .setAttribute("visible", false);
+    });
   }
-
-  AFRAME.registerComponent("markerhandler", {
-    schema: { node: { type: "string" } },
-
-    init() {
-      this.el.addEventListener("markerFound", () => {
-        const node = this.data.node;
-        document.getElementById("status").innerText = `You are at ${node}`;
-
-        setStartNode(node);
-        const step = onNodeReached(node) || navigateTo(DESTINATION);
-
-        if (step) {
-          rotateArrow(step.action);
-          document.getElementById("status").innerText = `Go ${step.action}`;
-        } else {
-          document.getElementById("status").innerText = "Destination reached 🎯";
-        }
-      });
-    }
-  });
+});
 </script>
 
 </body>
 </html>
-
