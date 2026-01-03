@@ -76,7 +76,7 @@
 
 <body>
 
-<!-- START / PERMISSION SCREEN -->
+<!-- START / CAMERA PERMISSION SCREEN -->
 <div id="startScreen">
   <h1>Campus AR Navigation</h1>
   <p>Point your camera at campus QR markers<br>to get live directions</p>
@@ -98,7 +98,7 @@
   "
 >
 
-  <!-- ONE REUSABLE ARROW -->
+  <!-- ONE REUSABLE NAVIGATION ARROW -->
   <a-entity
     id="navArrow"
     visible="false"
@@ -112,12 +112,24 @@
       loop: true;
       easing: easeInOutSine"
   >
-    <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="#00ff00"></a-cylinder>
-    <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="#00ff00"></a-cone>
+    <a-cylinder
+      position="0 0.35 0"
+      radius="0.05"
+      height="0.5"
+      color="#00ff00">
+    </a-cylinder>
+
+    <a-cone
+      position="0 0.7 0"
+      radius-bottom="0.15"
+      height="0.25"
+      color="#00ff00">
+    </a-cone>
   </a-entity>
 
-  <!-- QR MARKERS -->
+  <!-- QR / PATTERN MARKERS -->
   <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
+
   <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
   <a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
   <a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
@@ -140,7 +152,7 @@
 
 <script>
 /* ================= CONFIG ================= */
-const DESTINATION = "B2"; // Change destination here
+const DESTINATION = "B2";   // 🔁 Change destination here
 
 /* ================= START AR ================= */
 document.getElementById("startAR").addEventListener("click", async () => {
@@ -174,13 +186,22 @@ AFRAME.registerComponent("markerhandler", {
       const node = this.data.node;
       const arrow = document.getElementById("navArrow");
 
-      // Attach arrow to marker
+      /* Attach arrow to detected marker */
       this.el.appendChild(arrow);
-      arrow.setAttribute("visible", true);
       arrow.setAttribute("position", "0 0.3 0");
+      arrow.setAttribute("visible", true);
+
+      /* Show current location */
+      document.getElementById("status").innerText =
+        `You are at ${node}`;
 
       setStartNode(node);
-      const step = onNodeReached(node) || navigateTo(DESTINATION);
+
+      /* SAFE navigation logic */
+      let step = onNodeReached(node);
+      if (!step) {
+        step = navigateTo(DESTINATION);
+      }
 
       if (step) {
         rotateArrow(step.action);
@@ -193,7 +214,8 @@ AFRAME.registerComponent("markerhandler", {
     });
 
     this.el.addEventListener("markerLost", () => {
-      document.getElementById("navArrow").setAttribute("visible", false);
+      document.getElementById("navArrow")
+        .setAttribute("visible", false);
     });
   }
 });
