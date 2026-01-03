@@ -102,11 +102,11 @@
   <a-entity
     id="navArrow"
     visible="false"
-    position="0 0.3 0"
+    position="0 0.4 0"
     animation__float="
       property: position;
-      from: 0 0.3 0;
-      to: 0 0.35 0;
+      from: 0 0.4 0;
+      to: 0 0.45 0;
       dur: 800;
       dir: alternate;
       loop: true;
@@ -152,7 +152,10 @@
 
 <script>
 /* ================= CONFIG ================= */
-const DESTINATION = "B2";   // 🔁 Change destination here
+const DESTINATION = "B2";
+
+/* Prevent repeated trigger on same marker */
+let lastNode = null;
 
 /* ================= START AR ================= */
 document.getElementById("startAR").addEventListener("click", async () => {
@@ -184,20 +187,24 @@ AFRAME.registerComponent("markerhandler", {
   init() {
     this.el.addEventListener("markerFound", () => {
       const node = this.data.node;
+
+      /* Debounce: ignore same marker repeatedly */
+      if (lastNode === node) return;
+      lastNode = node;
+
       const arrow = document.getElementById("navArrow");
 
       /* Attach arrow to detected marker */
       this.el.appendChild(arrow);
-      arrow.setAttribute("position", "0 0.3 0");
+      arrow.setAttribute("position", "0 0.4 0");
       arrow.setAttribute("visible", true);
 
-      /* Show current location */
       document.getElementById("status").innerText =
         `You are at ${node}`;
 
       setStartNode(node);
 
-      /* SAFE navigation logic */
+      /* Safe navigation logic */
       let step = onNodeReached(node);
       if (!step) {
         step = navigateTo(DESTINATION);
