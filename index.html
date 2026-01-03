@@ -186,47 +186,23 @@ AFRAME.registerComponent("markerhandler", {
 
   init() {
     this.el.addEventListener("markerFound", () => {
+      console.log("MARKER FOUND:", this.data.node); // 👈 ADD THIS
+
       const node = this.data.node;
-
-      /* Debounce: ignore same marker repeatedly */
-      if (lastNode === node) return;
-      lastNode = node;
-
-      const arrow = document.getElementById("navArrow");
-
-      /* Attach arrow to detected marker */
-      this.el.appendChild(arrow);
-      arrow.setAttribute("position", "0 0.4 0");
-      arrow.setAttribute("visible", true);
-
-      document.getElementById("status").innerText =
-        `You are at ${node}`;
-
       setStartNode(node);
 
-      /* Safe navigation logic */
-      let step = onNodeReached(node);
-      if (!step) {
-        step = navigateTo(DESTINATION);
-      }
-
-      if (step) {
-        rotateArrow(step.action);
-        document.getElementById("status").innerText =
-          `Go ${step.action}`;
-      } else {
-        document.getElementById("status").innerText =
-          "Destination reached 🎯";
-      }
+      const step = onNodeReached(node) || navigateTo(DESTINATION);
+      if (step) rotateArrow(step.action);
     });
 
     this.el.addEventListener("markerLost", () => {
-      document.getElementById("navArrow")
-        .setAttribute("visible", false);
+      console.log("MARKER LOST:", this.data.node); // 👈 ADD THIS
     });
   }
 });
+
 </script>
 
 </body>
 </html>
+
