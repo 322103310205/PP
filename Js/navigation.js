@@ -1,12 +1,10 @@
 let mapData = null;
 let graph = {};
-
 let startNode = null;
-let activeSteps = [];
-let currentStepIndex = 0;
-let currentTargetNode = null;
+let steps = [];
+let index = 0;
+let target = null;
 
-/* ---------- LOAD MAP ---------- */
 export async function loadMap() {
   const res = await fetch("map.json");
   mapData = await res.json();
@@ -18,113 +16,87 @@ export async function loadMap() {
       neighbors: n.connections
     };
   });
-
-  console.log("Map loaded with nodes:", graph);
 }
 
-/* ---------- A* HEURISTIC ---------- */
 function heuristic(a, b) {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
-/* ---------- A* PATHFINDING ---------- */
 function aStar(start, goal) {
-  const openSet = new Set([start]);
-  const cameFrom = {};
-
-  const gScore = {};
-  const fScore = {};
+  const open = new Set([start]);
+  const came = {};
+  const g = {};
+  const f = {};
 
   Object.keys(graph).forEach(n => {
-    gScore[n] = Infinity;
-    fScore[n] = Infinity;
+    g[n] = Infinity;
+    f[n] = Infinity;
   });
 
-  gScore[start] = 0;
-  fScore[start] = heuristic(graph[start], graph[goal]);
+  g[start] = 0;
+  f[start] = heuristic(graph[start], graph[goal]);
 
-  while (openSet.size > 0) {
-    const current = [...openSet].reduce((a, b) =>
-      fScore[a] < fScore[b] ? a : b
-    );
+  while (open.size) {
+    const current = [...open].reduce((a, b) => f[a] < f[b] ? a : b);
+    if (current === goal) return buildPath(came, current);
 
-    if (current === goal) {
-      return reconstructPath(cameFrom, current);
-    }
+    open.delete(current);
 
-    openSet.delete(current);
-
-    for (const neighbor of graph[current].neighbors) {
-      const tentativeG =
-        gScore[current] +
-        heuristic(graph[current], graph[neighbor]);
-
-      if (tentativeG < gScore[neighbor]) {
-        cameFrom[neighbor] = current;
-        gScore[neighbor] = tentativeG;
-        fScore[neighbor] =
-          tentativeG + heuristic(graph[neighbor], graph[goal]);
-        openSet.add(neighbor);
+    for (const n of graph[current].neighbors) {
+      const temp = g[current] + heuristic(graph[current], graph[n]);
+      if (temp < g[n]) {
+        came[n] = current;
+        g[n] = temp;
+        f[n] = temp + heuristic(graph[n], graph[goal]);
+        open.add(n);
       }
     }
   }
   return null;
 }
 
-/* ---------- PATH RECONSTRUCTION ---------- */
-function reconstructPath(cameFrom, current) {
-  const path = [current];
-  while (cameFrom[current]) {
-    current = cameFrom[current];
-    path.unshift(current);
+function buildPath(came, cur) {
+  const path = [cur];
+  while (came[cur]) {
+    cur = came[cur];
+    path.unshift(cur);
   }
   return path;
 }
 
-/* ---------- DIRECTION ---------- */
-function getDirection(from, to) {
+function direction(from, to) {
   const dx = graph[to].x - graph[from].x;
   const dy = graph[to].y - graph[from].y;
-
-  if (Math.abs(dx) > Math.abs(dy))
-    return dx > 0 ? "RIGHT" : "LEFT";
+  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? "RIGHT" : "LEFT";
   return dy > 0 ? "BACK" : "FORWARD";
 }
 
-/* ---------- NAVIGATION API ---------- */
-export function setStartNode(node) {
-  startNode = node;
+export function setStartNode(n) {
+  startNode = n;
 }
 
 export function navigateTo(dest) {
-  if (!startNode || !graph[dest]) return null;
-
   const path = aStar(startNode, dest);
   if (!path || path.length < 2) return null;
 
-  activeSteps = [];
+  steps = [];
   for (let i = 1; i < path.length; i++) {
-    activeSteps.push({
+    steps.push({
       from: path[i - 1],
       to: path[i],
-      action: getDirection(path[i - 1], path[i])
+      action: direction(path[i - 1], path[i])
     });
   }
 
-  currentStepIndex = 0;
-  currentTargetNode = activeSteps[0].to;
-  return activeSteps[0];
+  index = 0;
+  target = steps[0].to;
+  return steps[0];
 }
 
 export function onNodeReached(node) {
-  if (node !== currentTargetNode) return null;
-
-  currentStepIndex++;
-  if (currentStepIndex >= activeSteps.length) {
-    console.log("Destination reached");
-    return null;
-  }
-
-  currentTargetNode = activeSteps[currentStepIndex].to;
-  return activeSteps[currentStepIndex];
+  if (node !== target) return null;
+  index++;
+  if (index >= steps.length) return null;
+  target = steps[index].to;
+  return steps[index];
 }
