@@ -148,7 +148,14 @@
 </a-scene>
 
 <!-- LOAD NAVIGATION LOGIC -->
-<script src="Js/navigation.js"></script>
+<script type="module">
+  import { loadMap, setStartNode, navigateTo, onNodeReached } from "./Js/navigation.js";
+  window.loadMap = loadMap;
+  window.setStartNode = setStartNode;
+  window.navigateTo = navigateTo;
+  window.onNodeReached = onNodeReached;
+</script>
+
 
 <script>
 /* ================= CONFIG ================= */
@@ -230,3 +237,4 @@ AFRAME.registerComponent("markerhandler", {
 
 </body>
 </html>
+
