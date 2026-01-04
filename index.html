@@ -9,10 +9,7 @@
 
   <title>College AR Navigation</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-
-  <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
@@ -23,7 +20,6 @@
       font-family: Arial, sans-serif;
     }
 
-    /* ---------- START SCREEN ---------- */
     #startScreen {
       position: fixed;
       inset: 0;
@@ -59,7 +55,6 @@
       cursor: pointer;
     }
 
-    /* ---------- STATUS BAR ---------- */
     #status {
       position: fixed;
       bottom: 15px;
@@ -76,10 +71,9 @@
 
 <body>
 
-<!-- START / CAMERA PERMISSION SCREEN -->
 <div id="startScreen">
   <h1>Campus AR Navigation</h1>
-  <p>Point your camera at campus QR markers<br>to get live directions</p>
+  <p>Scan campus AR markers to get live directions</p>
   <button id="startAR">Allow Camera & Start</button>
 </div>
 
@@ -91,43 +85,14 @@
   style="display:none"
   vr-mode-ui="enabled:false"
   renderer="antialias:true; precision: mediump;"
-  arjs="
-    sourceType: webcam;
-    facingMode: environment;
-    debugUIEnabled: false;
-  "
+  arjs="sourceType:webcam; facingMode:environment; debugUIEnabled:true;"
 >
 
-  <!-- ONE REUSABLE NAVIGATION ARROW -->
-  <a-entity
-    id="navArrow"
-    visible="false"
-    position="0 0.4 0"
-    animation__float="
-      property: position;
-      from: 0 0.4 0;
-      to: 0 0.45 0;
-      dur: 800;
-      dir: alternate;
-      loop: true;
-      easing: easeInOutSine"
-  >
-    <a-cylinder
-      position="0 0.35 0"
-      radius="0.05"
-      height="0.5"
-      color="#00ff00">
-    </a-cylinder>
-
-    <a-cone
-      position="0 0.7 0"
-      radius-bottom="0.15"
-      height="0.25"
-      color="#00ff00">
-    </a-cone>
+  <a-entity id="navArrow" visible="false" scale="2 2 2">
+    <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="#00ff00"></a-cylinder>
+    <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="#00ff00"></a-cone>
   </a-entity>
 
-  <!-- QR / PATTERN MARKERS -->
   <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
 
   <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
@@ -147,89 +112,60 @@
   <a-entity camera></a-entity>
 </a-scene>
 
-<!-- LOAD NAVIGATION LOGIC -->
 <script type="module">
-  import { loadMap, setStartNode, navigateTo, onNodeReached } from "./Js/navigation.js";
-  window.loadMap = loadMap;
-  window.setStartNode = setStartNode;
-  window.navigateTo = navigateTo;
-  window.onNodeReached = onNodeReached;
-</script>
+import { loadMap, setStartNode, navigateTo, onNodeReached } from "./Js/navigation.js";
 
+window.loadMap = loadMap;
+window.setStartNode = setStartNode;
+window.navigateTo = navigateTo;
+window.onNodeReached = onNodeReached;
 
-<script>
-/* ================= CONFIG ================= */
 const DESTINATION = "B2";
-
-/* Prevent repeated trigger on same marker */
 let lastNode = null;
 
-/* ================= START AR ================= */
 document.getElementById("startAR").addEventListener("click", async () => {
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("scene").style.display = "block";
-  document.getElementById("status").innerText = "Scan a QR marker";
+  document.getElementById("status").innerText = "Scan a marker";
   await loadMap();
 });
 
-/* ================= ROTATE ARROW ================= */
 function rotateArrow(action) {
   const arrow = document.getElementById("navArrow");
-  arrow.setAttribute("visible", true);
-
-  const angles = {
-    FORWARD: 0,
-    LEFT: -90,
-    RIGHT: 90,
-    BACK: 180
-  };
-
+  const angles = { FORWARD: 0, LEFT: -90, RIGHT: 90, BACK: 180 };
   arrow.setAttribute("rotation", `0 ${angles[action]} 0`);
 }
 
-/* ================= MARKER HANDLER ================= */
 AFRAME.registerComponent("markerhandler", {
   schema: { node: { type: "string" } },
 
   init() {
     this.el.addEventListener("markerFound", () => {
       const node = this.data.node;
-
-      /* Debounce: ignore same marker repeatedly */
       if (lastNode === node) return;
       lastNode = node;
 
       const arrow = document.getElementById("navArrow");
+      if (arrow.parentNode !== this.el) this.el.appendChild(arrow);
 
-      /* Attach arrow to detected marker */
-      this.el.appendChild(arrow);
-      arrow.setAttribute("position", "0 0.4 0");
+      arrow.setAttribute("position", "0 0.6 0");
       arrow.setAttribute("visible", true);
 
-      document.getElementById("status").innerText =
-        `You are at ${node}`;
+      document.getElementById("status").innerText = `You are at ${node}`;
 
       setStartNode(node);
-
-      /* Safe navigation logic */
-      let step = onNodeReached(node);
-      if (!step) {
-        step = navigateTo(DESTINATION);
-      }
+      const step = onNodeReached(node) || navigateTo(DESTINATION);
 
       if (step) {
         rotateArrow(step.action);
-        document.getElementById("status").innerText =
-          `Go ${step.action}`;
+        document.getElementById("status").innerText = `Go ${step.action}`;
       } else {
-        document.getElementById("status").innerText =
-          "Destination reached 🎯";
+        document.getElementById("status").innerText = "Destination reached 🎯";
       }
     });
 
     this.el.addEventListener("markerLost", () => {
-      document.getElementById("navArrow")
-        .setAttribute("visible", false);
+      document.getElementById("navArrow").setAttribute("visible", false);
     });
   }
 });
@@ -237,4 +173,3 @@ AFRAME.registerComponent("markerhandler", {
 
 </body>
 </html>
-
