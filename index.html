@@ -1,170 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="viewport"
-        content="width=device-width,
-                 initial-scale=1.0,
-                 maximum-scale=1.0,
-                 user-scalable=no">
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
 
-  <title>College AR Navigation</title>
+<title>College AR Navigation</title>
 
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      font-family: Arial, sans-serif;
-    }
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  font-family: Arial, sans-serif;
+}
 
-    #startScreen {
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      z-index: 9999;
-      text-align: center;
-      padding: 20px;
-    }
+#startScreen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg,#0f2027,#203a43,#2c5364);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  z-index: 9999;
+}
 
-    #startScreen h1 {
-      margin-bottom: 10px;
-      font-size: 26px;
-    }
+#startAR {
+  padding: 14px 26px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  background: #00c853;
+  color: white;
+}
 
-    #startScreen p {
-      font-size: 15px;
-      opacity: 0.9;
-      margin-bottom: 25px;
-    }
+#status {
+  position: fixed;
+  bottom: 15px;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-size: 16px;
+  z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  padding: 10px 0;
+}
 
-    #startAR {
-      padding: 14px 26px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      background: #00c853;
-      color: white;
-      cursor: pointer;
-    }
+#controls {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  background: rgba(0,0,0,0.7);
+  padding: 8px;
+  border-radius: 8px;
+  color: white;
+}
 
-    #status {
-      position: fixed;
-      bottom: 15px;
-      width: 100%;
-      text-align: center;
-      color: white;
-      font-size: 16px;
-      z-index: 9999;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 0;
-    }
-  </style>
+#controls select {
+  padding: 6px;
+  font-size: 14px;
+}
+
+#minimap {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 140px;
+  height: 140px;
+  background: rgba(0,0,0,0.75);
+  border-radius: 10px;
+  z-index: 9999;
+  padding: 5px;
+}
+
+#minimap canvas {
+  width: 100%;
+  height: 100%;
+}
+</style>
 </head>
 
 <body>
 
 <div id="startScreen">
-  <h1>Campus AR Navigation</h1>
-  <p>Scan campus AR markers to get live directions</p>
+  <h2>Campus AR Navigation</h2>
   <button id="startAR">Allow Camera & Start</button>
 </div>
 
 <div id="status">Waiting for camera…</div>
+
+<div id="controls">
+  Destination:
+  <select id="destination">
+    <option value="B2">B2 - Admin Block</option>
+    <option value="GATE">Main Gate</option>
+    <option value="B1">B1</option>
+    <option value="B3">B3</option>
+    <option value="B4">B4</option>
+    <option value="B5">B5</option>
+    <option value="B6">B6</option>
+    <option value="B7">B7</option>
+    <option value="B8">B8</option>
+    <option value="B9">B9</option>
+    <option value="B10">B10</option>
+    <option value="B11">B11</option>
+    <option value="B12">B12</option>
+    <option value="B13">B13</option>
+  </select>
+</div>
+
+<div id="minimap">
+  <canvas id="mapCanvas" width="140" height="140"></canvas>
+</div>
 
 <a-scene
   id="scene"
   embedded
   style="display:none"
   vr-mode-ui="enabled:false"
-  renderer="antialias:true; precision: mediump;"
-  arjs="sourceType:webcam; facingMode:environment; debugUIEnabled:true;"
+  arjs="sourceType:webcam; facingMode:environment; debugUIEnabled:false;"
 >
 
-  <a-entity id="navArrow" visible="false" scale="2 2 2">
-    <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="#00ff00"></a-cylinder>
-    <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="#00ff00"></a-cone>
-  </a-entity>
+<a-entity id="navArrow" visible="false" scale="2 2 2">
+  <a-cylinder position="0 0.35 0" radius="0.05" height="0.5" color="lime"></a-cylinder>
+  <a-cone position="0 0.7 0" radius-bottom="0.15" height="0.25" color="lime"></a-cone>
+</a-entity>
 
-  <a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
+<a-marker type="pattern" url="markers/GATE.patt" markerhandler="node:GATE"></a-marker>
+<a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
+<a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
+<a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
+<a-marker type="pattern" url="markers/B4.patt" markerhandler="node:B4"></a-marker>
+<a-marker type="pattern" url="markers/B5.patt" markerhandler="node:B5"></a-marker>
+<a-marker type="pattern" url="markers/B6.patt" markerhandler="node:B6"></a-marker>
+<a-marker type="pattern" url="markers/B7.patt" markerhandler="node:B7"></a-marker>
+<a-marker type="pattern" url="markers/B8.patt" markerhandler="node:B8"></a-marker>
+<a-marker type="pattern" url="markers/B9.patt" markerhandler="node:B9"></a-marker>
+<a-marker type="pattern" url="markers/B10.patt" markerhandler="node:B10"></a-marker>
+<a-marker type="pattern" url="markers/B11.patt" markerhandler="node:B11"></a-marker>
+<a-marker type="pattern" url="markers/B12.patt" markerhandler="node:B12"></a-marker>
+<a-marker type="pattern" url="markers/B13.patt" markerhandler="node:B13"></a-marker>
 
-  <a-marker type="pattern" url="markers/B1.patt" markerhandler="node:B1"></a-marker>
-  <a-marker type="pattern" url="markers/B2.patt" markerhandler="node:B2"></a-marker>
-  <a-marker type="pattern" url="markers/B3.patt" markerhandler="node:B3"></a-marker>
-  <a-marker type="pattern" url="markers/B4.patt" markerhandler="node:B4"></a-marker>
-  <a-marker type="pattern" url="markers/B5.patt" markerhandler="node:B5"></a-marker>
-  <a-marker type="pattern" url="markers/B6.patt" markerhandler="node:B6"></a-marker>
-  <a-marker type="pattern" url="markers/B7.patt" markerhandler="node:B7"></a-marker>
-  <a-marker type="pattern" url="markers/B8.patt" markerhandler="node:B8"></a-marker>
-  <a-marker type="pattern" url="markers/B9.patt" markerhandler="node:B9"></a-marker>
-  <a-marker type="pattern" url="markers/B10.patt" markerhandler="node:B10"></a-marker>
-  <a-marker type="pattern" url="markers/B11.patt" markerhandler="node:B11"></a-marker>
-  <a-marker type="pattern" url="markers/B12.patt" markerhandler="node:B12"></a-marker>
-  <a-marker type="pattern" url="markers/B13.patt" markerhandler="node:B13"></a-marker>
-
-  <a-entity camera></a-entity>
+<a-entity camera></a-entity>
 </a-scene>
 
 <script type="module">
 import { loadMap, setStartNode, navigateTo, onNodeReached } from "./Js/navigation.js";
 
-window.loadMap = loadMap;
-window.setStartNode = setStartNode;
-window.navigateTo = navigateTo;
-window.onNodeReached = onNodeReached;
+let DESTINATION = document.getElementById("destination").value;
+let currentNode = null;
 
-const DESTINATION = "B2";
-let lastNode = null;
+const canvas = document.getElementById("mapCanvas");
+const ctx = canvas.getContext("2d");
 
-document.getElementById("startAR").addEventListener("click", async () => {
+document.getElementById("destination").onchange = e => {
+  DESTINATION = e.target.value;
+  currentNode = null;
+};
+
+document.getElementById("startAR").onclick = async () => {
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("scene").style.display = "block";
-  document.getElementById("status").innerText = "Scan a marker";
   await loadMap();
-});
+  drawMap();
+};
+
+async function drawMap() {
+  const data = await fetch("map.json").then(r => r.json());
+  ctx.clearRect(0,0,140,140);
+
+  data.nodes.forEach(n => {
+    const x = n.position.x + 70;
+    const y = 140 - (n.position.y + 70);
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  if (currentNode) {
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(currentNode.x+70,140-(currentNode.y+70),5,0,Math.PI*2);
+    ctx.fill();
+  }
+}
 
 function rotateArrow(action) {
   const arrow = document.getElementById("navArrow");
-  const angles = { FORWARD: 0, LEFT: -90, RIGHT: 90, BACK: 180 };
+  const angles = { FORWARD:0, LEFT:-90, RIGHT:90, BACK:180 };
   arrow.setAttribute("rotation", `0 ${angles[action]} 0`);
 }
 
 AFRAME.registerComponent("markerhandler", {
   schema: { node: { type: "string" } },
-
   init() {
-    this.el.addEventListener("markerFound", () => {
-      const node = this.data.node;
-      if (lastNode === node) return;
-      lastNode = node;
-
+    this.el.addEventListener("markerFound", async () => {
       const arrow = document.getElementById("navArrow");
       if (arrow.parentNode !== this.el) this.el.appendChild(arrow);
 
-      arrow.setAttribute("position", "0 0.6 0");
       arrow.setAttribute("visible", true);
+      arrow.setAttribute("position", "0 0.6 0");
 
-      document.getElementById("status").innerText = `You are at ${node}`;
+      setStartNode(this.data.node);
+      const step = onNodeReached(this.data.node) || navigateTo(DESTINATION);
 
-      setStartNode(node);
-      const step = onNodeReached(node) || navigateTo(DESTINATION);
+      const map = await fetch("map.json").then(r=>r.json());
+      currentNode = map.nodes.find(n=>n.id===this.data.node);
 
-      if (step) {
+      if(step){
         rotateArrow(step.action);
-        document.getElementById("status").innerText = `Go ${step.action}`;
+        document.getElementById("status").innerText =
+          `Go ${step.action} to ${DESTINATION}`;
       } else {
-        document.getElementById("status").innerText = "Destination reached 🎯";
+        document.getElementById("status").innerText =
+          "Destination reached 🎯";
       }
+
+      drawMap();
     });
 
-    this.el.addEventListener("markerLost", () => {
+    this.el.addEventListener("markerLost", ()=>{
       document.getElementById("navArrow").setAttribute("visible", false);
     });
   }
